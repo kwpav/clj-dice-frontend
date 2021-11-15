@@ -1,4 +1,5 @@
 (ns clojure-dice-frontend.db)
 
 (def default-db
-  {:name "re-frame"})
+  {:dice "1d20"
+   :roll '(1)})
