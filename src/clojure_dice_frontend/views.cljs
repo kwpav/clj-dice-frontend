@@ -20,15 +20,16 @@
 
 (defn rolls
   []
-  (let [rolls (re-frame/subscribe [::subs/roll])]
+  (let [rolls (re-frame/subscribe [::subs/rolls])]
     [:ul (for [roll @rolls] [:li roll])]))
 
 (defn total
   []
-  (let [rolls (re-frame/subscribe [::subs/roll])]
-    [:p "Total: " (reduce + @rolls)]))
+  (let [total (re-frame/subscribe [::subs/total])]
+    [:p "Total: " @total]))
 
-(defn main-panel []
+(defn main-panel
+  []
   [:div
    [:h1 "Dice Roller"]
    [rolls]

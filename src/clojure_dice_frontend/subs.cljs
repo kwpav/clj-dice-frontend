@@ -8,11 +8,16 @@
    (:name db)))
 
 (re-frame/reg-sub
- ::roll
+ ::rolls
  (fn [db]
-   (:roll db)))
+   (:rolls db)))
 
 (re-frame/reg-sub
  ::dice
  (fn [db]
    (:dice db)))
+
+(re-frame/reg-sub
+ ::total
+ (fn [db]
+   (:total db)))

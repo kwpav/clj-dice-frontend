@@ -11,15 +11,9 @@
   [_ _]
   db/default-db))
 
-(re-frame/reg-event-db
- ::update-name
- (fn-traced
-  [db [_ val]]
-  (assoc db :name val)))
-
 (defn parse-dice
   [dice]
-  (clojure.string/split dice #"d"))
+  (map #(js/parseInt %) (str/split dice #"d")))
 
 (defn roll-die
   "Roll a single die. The rand-int function returns an integer between 0 to n-1,
@@ -36,13 +30,14 @@
  ::roll-dice
  (fn-traced
   [db [_ val]]
-  (let [dice (parse-dice val)
-        number (js/parseInt (first dice))
-        sides (js/parseInt (second dice))
+  (let [[number sides] (parse-dice val)
         rolls (roll-dice number sides)]
-    (assoc db :roll rolls))))
+    (-> db
+        (assoc :rolls rolls)
+        (assoc :total (reduce + rolls))))))
 
 (re-frame/reg-event-db
-::update-form
-(fn [db [_ id val]]
+ ::update-form
+ (fn-traced
+  [db [_ id val]]
   (assoc db :dice val)))
