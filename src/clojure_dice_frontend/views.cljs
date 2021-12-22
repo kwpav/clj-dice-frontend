@@ -1,8 +1,16 @@
 (ns clojure-dice-frontend.views
   (:require
+   [clojure.spec.alpha :as spec]
    [re-frame.core :as re-frame]
    [clojure-dice-frontend.subs :as subs]
    [clojure-dice-frontend.events :as events]))
+
+(spec/def ::valid-dice #(re-matches #"\d+d\d+[\+|\-]?[\d+]?" %))
+
+(defn valid-dice?
+  "Use the spec to check if the user input is valid."
+  [dice]
+  (spec/valid? ::valid-dice dice))
 
 (defn free-input
   [id]
