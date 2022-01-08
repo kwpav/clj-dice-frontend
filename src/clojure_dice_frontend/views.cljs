@@ -24,7 +24,7 @@
 (defn roll-dice-button
   []
   (let [dice (re-frame/subscribe [::subs/dice])]
-    [:button {:on-click #(re-frame/dispatch [::events/roll-dice @dice])} "Roll Dice"]))
+    [:button {:on-click #(re-frame/dispatch [::events/process-form @dice])} "Roll Dice"]))
 
 (defn rolls
   []
