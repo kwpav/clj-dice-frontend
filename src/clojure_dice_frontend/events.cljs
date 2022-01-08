@@ -29,27 +29,26 @@
 (re-frame/reg-event-db
  ::roll-dice
  (fn-traced
-  [db [_ val]]
-  (let [[number sides] (parse-dice val)
+  [db [_ dice]]
+  (let [[number sides] (parse-dice dice)
         rolls (roll-dice number sides)
         total (reduce + rolls)]
     (-> db
         (assoc :rolls rolls)
-        (assoc :total total)
-        #_(assoc :history history)))))
+        (assoc :total total)))))
 
 (re-frame/reg-event-db
  ::add-to-history
  (fn-traced
   [db]
   (let [history (if (>= (count (:history db)) 10) (vec (rest (:history db))) (:history db))]
-    (assoc db :history (into history [(dissoc db :history)])))))
+    (assoc db :history (conj history (dissoc db :history))))))
 
 (re-frame/reg-event-fx
  ::process-form
  (fn-traced
-  [db [_ val]]
-  {:dispatch-n [[::roll-dice val]
+  [db [_ dice]]
+  {:dispatch-n [[::roll-dice dice]
                 [::add-to-history]]}))
 
 (re-frame/reg-event-db
