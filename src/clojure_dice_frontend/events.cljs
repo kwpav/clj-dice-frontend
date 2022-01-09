@@ -33,13 +33,13 @@
  (fn-traced
   [db [_ dice]]
   (let [[number sides mod] (parse-dice dice)
-        rolls (roll-dice number sides)
-        ;; modfn (cond (str/includes dice "+") +
-        ;;             (str/includes dice "-") -)
-        total (reduce + rolls)
-        ;; keep the values from the last 20 rolls
-        history (if (>= (count (:history db)) 20)
-                  (vec (rest (:history db))) (:history db))]
+        rolls              (roll-dice number sides)
+        modfn              (cond (str/includes? dice "+") +
+                                 (str/includes? dice "-") -)
+        total              (cond-> (reduce + rolls)
+                             (fn? modfn) (modfn mod))
+        history            (if (>= (count (:history db)) 20)
+                             (vec (rest (:history db))) (:history db))]
     (-> db
         (assoc :rolls rolls)
         (assoc :total total)
