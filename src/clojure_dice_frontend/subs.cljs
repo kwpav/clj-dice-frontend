@@ -21,3 +21,8 @@
  ::total
  (fn [db]
    (:total db)))
+
+(re-frame/reg-sub
+ ::history
+ (fn [db]
+   (:history db)))
