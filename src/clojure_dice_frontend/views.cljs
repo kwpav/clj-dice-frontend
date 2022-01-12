@@ -6,8 +6,10 @@
 
 (defn rolls
   []
-  (let [rolls @(rf/subscribe [::subs/rolls])]
-    [:ul (for [roll rolls] [:li roll])]))
+  (let [rolls @(rf/subscribe [::subs/results])]
+    [:<>
+     [:p "Rolls: "]
+     [:ul (for [roll rolls] [:li roll])]]))
 
 (defn total
   []
@@ -40,15 +42,15 @@
 
 (defn dice-form
   [id]
-  (let [dice @(rf/subscribe [::subs/dice])
-        valid-dice? @(rf/subscribe [::subs/valid-dice?])]
+  (let [dice @(rf/subscribe [::subs/form-value])
+        valid-dice? @(rf/subscribe [::subs/valid-form?])]
     [:<>
      [dice-input id dice valid-dice?]
      [roll-dice-button dice valid-dice?]]))
 
 (defn history
   []
-  (let [history @(rf/subscribe [::subs/history])]
+  (let [history @(rf/subscribe [::subs/rolls])]
     [:<>
      (for [roll history]
        [:div {:class "card"}

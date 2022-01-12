@@ -60,21 +60,17 @@
  [check-spec-interceptor]
  (fn-traced
   [db [_ dice]]
-  (when (:valid-dice? db)
-    (let [[number sides mod] (parse-dice dice)
-          rolls              (roll-dice number sides)
-          modfn              (cond (str/includes? dice "+") +
-                                   (str/includes? dice "-") -)
-          total              (cond-> (reduce + rolls)
-                               (fn? modfn) (modfn mod))
-          history            (if (>= (count (:history db)) 20)
-                               (vec (rest (:history db))) (:history db))]
-      (-> db
-          (assoc :rolls rolls)
-          (assoc :total total)
-          (assoc :history (conj history (-> db
-                                            (dissoc :history)
-                                            (dissoc :valid-dice?)))))))))
+  (let [[number sides mod] (parse-dice dice)
+        results            (roll-dice number sides)
+        modfn              (cond (str/includes? dice "+") +
+                                 (str/includes? dice "-") -)
+        total              (cond-> (reduce + results)
+                             (fn? modfn) (modfn mod))
+        rolls              (if (>= (count (:rolls db)) 20)
+                             (vec (rest (:rolls db))) (:rolls db))]
+    (assoc db
+           :rolls
+           (conj rolls {:dice dice :results results :total total})))))
 
 (rf/reg-event-db
  ::update-form
@@ -82,5 +78,5 @@
  (fn-traced
   [db [_ id dice]]
   (-> db
-      (assoc :dice dice)
-      (assoc :valid-dice? (valid-dice? dice)))))
+      (assoc-in [:form :value] dice)
+      (assoc-in [:form :valid?] (valid-dice? dice)))))
