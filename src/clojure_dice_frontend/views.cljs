@@ -1,31 +1,17 @@
 (ns clojure-dice-frontend.views
   (:require
-   [clojure.spec.alpha :as spec]
-   [re-frame.core :as re-frame]
+   [clojure-dice-frontend.events :as events]
    [clojure-dice-frontend.subs :as subs]
-   [clojure-dice-frontend.events :as events]))
-
-;;(spec/def ::valid-dice #(re-matches #"\d+[dD]\d+[+-]?\d+" %))
-(spec/def ::valid-dice #(re-matches #"\d*[dD]\d*[-+]?\d+" %))
-
-(defn valid-dice?
-  "Use the spec to check if the user input is valid.
-  Examples:
-  - 1d6
-  - 10d20
-  - 1d10-5
-  - 4d20-10"
-  [dice]
-  (spec/valid? ::valid-dice dice))
+   [re-frame.core :as rf]))
 
 (defn rolls
   []
-  (let [rolls @(re-frame/subscribe [::subs/rolls])]
+  (let [rolls @(rf/subscribe [::subs/rolls])]
     [:ul (for [roll rolls] [:li roll])]))
 
 (defn total
   []
-  (let [total @(re-frame/subscribe [::subs/total])]
+  (let [total @(rf/subscribe [::subs/total])]
     [:p "Total: " total]))
 
 (defn results
@@ -35,35 +21,38 @@
    [total]])
 
 (defn dice-input
-  [id dice]
+  [id dice valid-dice?]
   [:div.field
    [:div.control
-    [:input.input {:on-change #(re-frame/dispatch
+    [:input.input {:on-change   #(rf/dispatch
                                 [::events/update-form id (-> % .-target .-value)])
-                   :class (str "input is-large " (if (valid-dice? dice) "is-primary" "is-danger"))
-                   :type "text"
+                   :class       (str "input is-large " (if valid-dice? "is-primary" "is-danger"))
+                   :type        "text"
                    :placeholder dice}]]])
 
 (defn roll-dice-button
-  [dice]
+  [dice valid-dice?]
   [:button
-   {:on-click #(re-frame/dispatch [::events/process-form dice])
-    :class "button is-primary"
-    :disabled (not (valid-dice? dice))}
+   {:on-click #(rf/dispatch [::events/process-form dice])
+    :class    "button is-large is-fullwidth is-primary"
+    :disabled (not valid-dice?)}
    "Roll Dice"])
 
 (defn dice-form
   [id]
-  (let [dice @(re-frame/subscribe [::subs/dice])]
+  (let [dice @(rf/subscribe [::subs/dice])
+        valid-dice? @(rf/subscribe [::subs/valid-dice?])]
     [:<>
-     [dice-input id dice]
-     [roll-dice-button dice]]))
+     [dice-input id dice valid-dice?]
+     [roll-dice-button dice valid-dice?]]))
 
 (defn history
   []
-  (let [history @(re-frame/subscribe [::subs/history])]
-    [:div {:class "card"}
-     [:pre (str history)]]))
+  (let [history @(rf/subscribe [::subs/history])]
+    [:<>
+     (for [roll history]
+       [:div {:class "card"}
+        [:pre (str roll)]])]))
 
 (defn main-panel
   []
