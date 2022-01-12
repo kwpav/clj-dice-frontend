@@ -23,7 +23,7 @@
 (defn parse-dice
   "Get the number, sides, and any modifiers of dice to roll."
   [dice]
-  (map #(js/parseInt %) (str/split dice #"[d+-]")))
+  (mapv #(js/parseInt %) (str/split dice #"[d+-]")))
 
 (defn roll-die
   "Roll a single die. The rand-int function returns an integer between 0 to n-1,
