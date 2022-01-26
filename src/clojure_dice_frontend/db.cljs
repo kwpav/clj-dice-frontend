@@ -9,6 +9,7 @@
 (s/def ::valid? boolean?)
 (s/def ::form (s/keys :req-un [::value ::valid?]))
 
+(s/def ::dice string?)
 (s/def ::results (s/coll-of number? :kind vector?))
 (s/def ::total int?)
 (s/def ::rolls (s/coll-of (s/keys :req-un [::dice ::results ::total]) :kind vector?))
