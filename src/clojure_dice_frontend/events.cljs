@@ -1,10 +1,10 @@
 (ns clojure-dice-frontend.events
   (:require
-   [clojure.string :as str]
-   [re-frame.core :as rf]
    [clojure-dice-frontend.db :as db]
    [clojure.spec.alpha :as s]
-   [day8.re-frame.tracing :refer-macros [fn-traced]]))
+   [clojure.string :as str]
+   [day8.re-frame.tracing :refer-macros [fn-traced]]
+   [re-frame.core :as rf]))
 
 ;; -- Interceptors
 ;; Define an interceptor that ensures `app-db` conforms to the specs.
@@ -60,17 +60,19 @@
  [check-spec-interceptor]
  (fn-traced
   [db [_ dice]]
-  (let [[number sides mod] (parse-dice dice)
-        results            (roll-dice number sides)
-        modfn              (cond (str/includes? dice "+") +
-                                 (str/includes? dice "-") -)
-        total              (cond-> (reduce + results)
-                             (fn? modfn) (modfn mod))
-        rolls              (if (>= (count (:rolls db)) 20)
-                             (vec (rest (:rolls db))) (:rolls db))]
-    (assoc db
-           :rolls
-           (conj rolls {:dice dice :results results :total total})))))
+  (when (get-in db [:form :valid?])
+    (let [[number sides mod] (parse-dice dice)
+          results            (roll-dice number sides)
+          modfn              (cond (str/includes? dice "+") #'+
+                                   (str/includes? dice "-") #'-
+                                   :else nil)
+          total              (cond-> (reduce + results)
+                               (fn? modfn) (modfn mod))
+          rolls              (if (>= (count (:rolls db)) 20)
+                               (vec (rest (:rolls db))) (:rolls db))]
+      (assoc db
+             :rolls
+             (conj rolls {:dice dice :results results :total total}))))))
 
 (rf/reg-event-db
  ::update-form
