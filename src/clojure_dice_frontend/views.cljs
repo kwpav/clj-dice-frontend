@@ -30,7 +30,7 @@
                                 [::events/update-form id (-> % .-target .-value)])
                    :class       (str "input is-large " (if valid-dice? "is-primary" "is-danger"))
                    :type        "text"
-                   :placeholder dice}]]])
+                   :value dice}]]])
 
 (defn roll-dice-button
   [dice valid-dice?]
