@@ -15,6 +15,6 @@
 
 (deftest parse-dice-test
   (testing "Dice is parsed into number, sides, and modifier"
-    (is (and (= (sut/parse-dice "1d20") [1 20])
-             (= (sut/parse-dice "1d20+10") [1 20 10])
-             (= (sut/parse-dice "1d20-10") [1 20 10])))))
+    (is (and (= (sut/parse-dice "1d20") {:number 1 :sides 20})
+             (= (sut/parse-dice "1d20+10") {:number 1 :sides 20 :modfn #'+ :mod 10})
+             (= (sut/parse-dice "1d20-10") {:number 1 :sides 20 :modfn #'- :mod 10 })))))

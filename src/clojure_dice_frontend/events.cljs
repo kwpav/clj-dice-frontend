@@ -24,9 +24,18 @@
   "Get the number, sides, and modifiers (if any) of dice to roll."
   [dice]
   (let [split-dice         (str/split dice #"[d+-]")
-        [number sides mod] (mapv #(js/parseInt %) split-dice)]
+        [number sides mod] (mapv #(js/parseInt %) split-dice)
+        modfn              (cond (str/includes? dice "+") #'+
+                                 (str/includes? dice "-") #'-
+                                 :else                    nil)]
     ;; filter out any nil values, e.g. mod
-    (into {} (filter second {:number number :sides sides :mod mod}))))
+    (into
+     {}
+     (filter second
+             {:number number
+              :sides sides
+              :modfn modfn
+              :mod mod}))))
 
 (defn roll-dice
   "Roll the given number of dice."
@@ -69,11 +78,8 @@
   [{:keys [rolls] :as db} dice]
   (if (get-in db [:form :valid?])
     (let [{:keys
-           [number sides mod]} (parse-dice dice)
+           [number sides mod modfn]} (parse-dice dice)
           results              (roll-dice number sides)
-          modfn                (cond (str/includes? dice "+") #'+
-                                     (str/includes? dice "-") #'-
-                                     :else                    nil)
           total                (cond-> (reduce + results)
                                  (fn? modfn) (modfn mod))
           roll                 {:dice dice :results results :total total}
