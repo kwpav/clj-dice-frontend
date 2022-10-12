@@ -38,13 +38,25 @@
 
 (defn valid-dice?
   "Determine if the user input is valid.
-  These are exampes of valid dice:
+  Some examples of valid dice:
   - 1d6
   - 10d20
   - 1d10-5
   - 4d20-10"
   [dice]
   (s/valid? #(re-matches #"\d*[dD]\d*[-+]?\d+" %) dice))
+
+(defn add-roll
+  "Add the most recent roll from :rolls in the db.
+  If its over the limit, remove the oldest."
+  [rolls roll]
+  (let [next-rolls (if (>= (count rolls) db/rolls-history-limit)
+                    (into [] (rest rolls))
+                    rolls)]
+    (conj next-rolls roll)))
+
+(defn calc-total
+  [number sides mod])
 
 ;; -- Event Handlers
 
@@ -55,24 +67,37 @@
   [_ _]
   db/default-db))
 
-(rf/reg-event-db
- ::process-form
- [check-spec-interceptor]
- (fn-traced
-  [db [_ dice]]
+(defn process-form
+  [{:keys [rolls] :as db} dice]
   (when (get-in db [:form :valid?])
     (let [[number sides mod] (parse-dice dice)
           results            (roll-dice number sides)
           modfn              (cond (str/includes? dice "+") #'+
                                    (str/includes? dice "-") #'-
-                                   :else nil)
+                                   :else                    nil)
           total              (cond-> (reduce + results)
                                (fn? modfn) (modfn mod))
-          rolls              (if (>= (count (:rolls db)) 20)
-                               (vec (rest (:rolls db))) (:rolls db))]
-      (assoc db
-             :rolls
-             (conj rolls {:dice dice :results results :total total}))))))
+          roll               {:dice dice :results results :total total}
+          next-rolls         (add-roll rolls roll)]
+      (assoc db :rolls next-rolls))))
+
+(rf/reg-event-db
+ ::process-form
+ [check-spec-interceptor]
+ (fn-traced
+  [db [_ dice]]
+  (process-form db dice)
+  #_(when (get-in db [:form :valid?])
+    (let [[number sides mod] (parse-dice dice)
+          results            (roll-dice number sides)
+          modfn              (cond (str/includes? dice "+") #'+
+                                   (str/includes? dice "-") #'-
+                                   :else                    nil)
+          total              (cond-> (reduce + results)
+                               (fn? modfn) (modfn mod))
+          roll               {:dice dice :results results :total total}
+          next-rolls         (add-roll rolls roll)]
+      (assoc db :rolls next-rolls)))))
 
 (rf/reg-event-db
  ::update-form

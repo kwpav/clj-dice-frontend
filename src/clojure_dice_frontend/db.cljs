@@ -17,6 +17,8 @@
 
 (s/def ::db (s/keys :req-un [::form ::rolls]))
 
+(def rolls-history-limit 10)
+
 (def default-db
   {:form {:value "1d20"
           :valid? true}
