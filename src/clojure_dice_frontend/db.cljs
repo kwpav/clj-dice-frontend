@@ -12,7 +12,8 @@
 (s/def ::dice string?)
 (s/def ::results (s/coll-of number? :kind vector?))
 (s/def ::total int?)
-(s/def ::rolls (s/coll-of (s/keys :req-un [::dice ::results ::total]) :kind vector?))
+(s/def ::roll (s/keys :req-un [::dice ::results ::total]))
+(s/def ::rolls (s/coll-of ::roll #_(s/keys :req-un [::dice ::results ::total]) :kind vector?))
 
 (s/def ::db (s/keys :req-un [::form ::rolls]))
 
