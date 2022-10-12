@@ -21,27 +21,28 @@
 ;; -- Helpers
 
 (defn parse-dice
-  "Get the number, sides, and any modifiers of dice to roll."
+  "Get the number, sides, and modifiers (if any) of dice to roll."
   [dice]
-  (mapv #(js/parseInt %) (str/split dice #"[d+-]")))
-
-(defn roll-die
-  "Roll a single die. The rand-int function returns an integer between 0 to n-1,
-  so adding 1 to that will give us the desired result."
-  [sides]
-  (inc (rand-int sides)))
+  (let [split-dice         (str/split dice #"[d+-]")
+        [number sides mod] (mapv #(js/parseInt %) split-dice)]
+    ;; filter out any nil values, e.g. mod
+    (into {} (filter second {:number number :sides sides :mod mod}))))
 
 (defn roll-dice
   "Roll the given number of dice."
   [number sides]
-  (vec (take number (repeatedly #(roll-die sides)))))
+  (letfn [(roll-die [sides]
+            ;; rand-int returns 0 to n-1,
+            ;; so we add 1 to get correct result
+            (inc (rand-int sides)))]
+    (into [] (take number (repeatedly #(roll-die sides))))))
 
 (defn valid-dice?
   "Determine if the user input is valid.
   Some examples of valid dice:
   - 1d6
   - 10d20
-  - 1d10-5
+  - 1d10+5
   - 4d20-10"
   [dice]
   (s/valid? #(re-matches #"\d*[dD]\d*[-+]?\d+" %) dice))
@@ -55,9 +56,6 @@
                     rolls)]
     (conj next-rolls roll)))
 
-(defn calc-total
-  [number sides mod])
-
 ;; -- Event Handlers
 
 (rf/reg-event-db
@@ -69,41 +67,36 @@
 
 (defn process-form
   [{:keys [rolls] :as db} dice]
-  (when (get-in db [:form :valid?])
-    (let [[number sides mod] (parse-dice dice)
-          results            (roll-dice number sides)
-          modfn              (cond (str/includes? dice "+") #'+
-                                   (str/includes? dice "-") #'-
-                                   :else                    nil)
-          total              (cond-> (reduce + results)
-                               (fn? modfn) (modfn mod))
-          roll               {:dice dice :results results :total total}
-          next-rolls         (add-roll rolls roll)]
-      (assoc db :rolls next-rolls))))
+  (if (get-in db [:form :valid?])
+    (let [{:keys
+           [number sides mod]} (parse-dice dice)
+          results              (roll-dice number sides)
+          modfn                (cond (str/includes? dice "+") #'+
+                                     (str/includes? dice "-") #'-
+                                     :else                    nil)
+          total                (cond-> (reduce + results)
+                                 (fn? modfn) (modfn mod))
+          roll                 {:dice dice :results results :total total}
+          next-rolls           (add-roll rolls roll)]
+      (assoc db :rolls next-rolls))
+    db))
 
 (rf/reg-event-db
  ::process-form
  [check-spec-interceptor]
  (fn-traced
   [db [_ dice]]
-  (process-form db dice)
-  #_(when (get-in db [:form :valid?])
-    (let [[number sides mod] (parse-dice dice)
-          results            (roll-dice number sides)
-          modfn              (cond (str/includes? dice "+") #'+
-                                   (str/includes? dice "-") #'-
-                                   :else                    nil)
-          total              (cond-> (reduce + results)
-                               (fn? modfn) (modfn mod))
-          roll               {:dice dice :results results :total total}
-          next-rolls         (add-roll rolls roll)]
-      (assoc db :rolls next-rolls)))))
+  (process-form db dice)))
+
+(defn update-form
+  [db dice]
+  (-> db
+      (assoc-in [:form :value] dice)
+      (assoc-in [:form :valid?] (valid-dice? dice))))
 
 (rf/reg-event-db
  ::update-form
  [check-spec-interceptor]
  (fn-traced
-  [db [_ id dice]]
-  (-> db
-      (assoc-in [:form :value] dice)
-      (assoc-in [:form :valid?] (valid-dice? dice)))))
+  [db [_ _id dice]]
+  (update-form db dice)))
